@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 class Ent {
   bool draw = true;
+  bool resistor = false;
   bool right = true;
   bool down = true;
 
@@ -99,14 +100,14 @@ class GraphPainter extends CustomPainter {
 
 //    const int n = 4, m = 3;
 //    const int n = 20, m = 20;
-    const int n = 7, m = 7;
+    const int n = 20, m = 20;
 
     List<List<Ent>> grid = List.generate(n, (i) => List.generate(m, (j) => Ent(true, i != n - 1, j != m - 1)));
     var rand = Random(randomSeed);
 
 //    const int removeEdgesCount = 3, removeVertexCount = 0;
 //    const int removeEdgesCount = 90, removeVertexCount = 70;
-    const int removeEdgesCount = 10, removeVertexCount = 10;
+    const int resistorCount = 10, removeEdgesCount = 100, removeVertexCount = 100;
     
     for (int i = 0, j = 0; i < removeVertexCount && j < 50000; j++) {
       int x = rand.nextInt(n - 1);
@@ -147,6 +148,18 @@ class GraphPainter extends CustomPainter {
         ++i;
       }
     }
+
+    for (int i = 0, j = 0; i < resistorCount && j < 50000;j++) {
+      int x = rand.nextInt(n - 1);
+      int y = rand.nextInt(m - 1);
+
+      if (grid[x][y].draw && getDegree(x, y, grid) == 2) {
+        grid[x][y].resistor = true;
+        i++;
+      }
+      else continue;
+    }
+    
     // canvas.drawRect(const Offset(0.0, 0.0) & const Size(100.0, 100.0), paint);
     
     const int offset = 100;
@@ -154,7 +167,12 @@ class GraphPainter extends CustomPainter {
     for (int i = 0; i < grid.length; i++) {
       for (int j = 0; j < grid[i].length; j++) {
         if (grid[i][j].draw) {
-          canvas.drawCircle(Offset(offset + i * 30.0, offset + j * 30.0), 4, paint);
+          if (grid[i][j].resistor) {
+            canvas.drawRect(Offset(offset + i * 30.0 - 10.0, offset + j * 30.0 - 10.0) & const Size(20, 20), paint);
+          }
+          else {
+            canvas.drawCircle(Offset(offset + i * 30.0, offset + j * 30.0), 4, paint);
+          }
         }
         if (grid[i][j].right && i < grid.length - 1) {
           canvas.drawLine(Offset(offset + i * 30.0, offset + j * 30.0), Offset(offset + i * 30.0 + 30.0, offset + j * 30.0), paint);

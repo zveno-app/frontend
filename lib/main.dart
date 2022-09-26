@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zveno_frontend/draw.dart';
+import 'package:zveno_frontend/draw3.dart';
+import 'dart:math';
 
 void main() {
   runApp(const MyApp());
@@ -87,7 +89,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // child: 
         // Column(
             CustomPaint(
-              painter: GraphPainter(_counter),
+              // painter: GraphPainter(_counter),
+              painter: BlockPainter(Block.create(BlockOrientation.v, Random(_counter)))
             ),
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
