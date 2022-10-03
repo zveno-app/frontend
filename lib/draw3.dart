@@ -21,8 +21,8 @@ class Block {
   static const double nextDivisionP = 0.5; // Exponential probability decrease
   static const double maxChildren = 4;
   static const double tempMultiplier = 0.5;
-  static const double startingTemp = 4.0;
-  static const double resistorP = 2.0;
+  static const double startingTemp = 2.0;
+  static const double resistorP = 1.5;
   static const double resistanceMultiplier = 0.5;
   static const int resistanceMax = 10;
   static const double resistorLengthRelative = 0.5;
@@ -32,10 +32,15 @@ class Block {
   BlockOrientation or;
   List<Block> children = [];
 
-  double startR = 0.0;
-  double endR = 0.0;
-  double leftDownR = 0.0;
-  double rightUpR = 0.0;
+  double leftR = 0.0;
+  double rightR = 0.0;
+  double upR = 0.0;
+  double downR = 0.0;
+
+  bool freeRight = false;
+  bool freeLeft = false;
+  bool freeUp = false;
+  bool freeDown = false;
 
   double startV = 0.0;
   double endV = 0.0;
@@ -43,21 +48,6 @@ class Block {
   Block(this.or);
 
   void populate(double temp, Random prng) {
-
-    // if (prng.nextDouble() < nextDivisionP * temp) {
-        // var newB = Block(or.other());
-        // newB.populate(temp * tempMultiplier, prng);
-        // children.add(newB);
-        // var newB2 = Block(or.other());
-        // newB2.populate(temp * tempMultiplier, prng);
-        // children.add(newB2);
-      // while (children.length < maxChildren && prng.nextDouble() < nextDivisionP * temp / (children.length + 1)) {
-        // var newB = Block(or.other());
-        // newB.populate(temp * tempMultiplier, prng);
-        // children.add(newB);
-      // }
-    // }
-
     while (prng.nextDouble() < nextDivisionP * temp / (children.length + 1) && children.length < maxChildren) {
       var newB = Block(or.other());
       var newB2 = Block(or.other());
@@ -66,17 +56,52 @@ class Block {
       children.add(newB);
       children.add(newB2);
     }
+ }
 
-    for (int i = 0; i < children.length; i++) {
-      if ((i == 0 || children[i-1].children.isEmpty) && children[i].children.isEmpty && prng.nextDouble() < resistorP) {
-        children[i].startR = prng.nextInt(resistanceMax) * resistanceMultiplier;
+  void placeResistors(double temp, Random prng) {
+    if (children.isNotEmpty) {
+      if (or == BlockOrientation.v) {
+        for (int i = 0; i < children.length - 1; i++) {
+          if (children[i+1].children.length < children[i].children.length) {
+            children[i].freeRight = true;
+          } else {
+            children[i+1].freeLeft = true;
+          }
+        }
+        children.first.freeLeft = freeLeft;
+        children.last.freeRight = freeRight;
+
+        for (var child in children) {
+          child.freeUp = freeUp;
+          child.freeDown = freeDown;
+
+          child.placeResistors(temp * tempMultiplier, prng);
+        }
+      } else {
+        for (int i = 0; i < children.length - 1; i++) {
+          if (children[i+1].children.length < children[i].children.length) {
+            children[i].freeDown = true;
+          } else {
+            children[i+1].freeUp = true;
+          }
+        }
+        children.first.freeUp = freeUp;
+        children.last.freeDown = freeDown;
+
+        for (var child in children) {
+          child.freeLeft = freeLeft;
+          child.freeRight = freeRight;
+          
+          child.placeResistors(temp, prng);
+        }
       }
-    }
-    if (children.isNotEmpty && children.last.children.isEmpty && prng.nextDouble() < resistorP) {
-       children.last.endR = prng.nextInt(resistanceMax) * resistanceMultiplier;
+    } else {
+      if (freeLeft && prng.nextDouble() < resistorP) leftR = 1.0;
+      if (freeRight && prng.nextDouble() < resistorP) rightR = 1.0;
+      if (freeUp && prng.nextDouble() < resistorP) upR = 1.0;
+      if (freeDown && prng.nextDouble() < resistorP) downR = 1.0;
     }
   }
-  
 
   void draw(Canvas canvas, Offset offset, Size size) {
     var paint = Paint()
@@ -94,43 +119,49 @@ class Block {
     double childHeight = size.height / children.length;
     for (int i = 0; i < children.length; i++) {
       if (or == BlockOrientation.h) {
-        double resW = min(maxResistorLen, size.width * resistorLengthRelative);
-        double resH = min(resW / resistorSizeRatio, childHeight / 3);
-        resW = resH * resistorSizeRatio;
         var childStartOffset = offset + Offset(0.0, childHeight * i);
         children[i].draw(canvas, childStartOffset, Size(size.width, childHeight));
-        if (children[i].startR > 0.0) {
-          canvas.drawRect(childStartOffset + Offset((size.width - resW) / 2, -(resH / 2)) & Size(resW, resH), resistorPaint);
-        } 
-        if (children[i].endR > 0.0) {
-          canvas.drawRect(childStartOffset + Offset((size.width - resW) / 2, childHeight - resH / 2) & Size(resW, resH), resistorPaint);
-        }
       } else {
-        double resH = min(maxResistorLen, size.height * resistorLengthRelative);
-        double resW = min(resH / resistorSizeRatio, childWidth / 3);
-        resH = resW * resistorSizeRatio;
         var childStartOffset = offset + Offset(childWidth * i, 0.0);
         children[i].draw(canvas, childStartOffset, Size(childWidth, size.height));
-        if (children[i].startR > 0.0) {
-          canvas.drawRect(childStartOffset + Offset(-resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
-        } 
-        if (children[i].endR > 0.0) {
-          canvas.drawRect(childStartOffset + Offset(childWidth - resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
-        }
+      }
+    }
+
+    {
+      double resW = min(maxResistorLen, size.width * resistorLengthRelative);
+      double resH = resW / resistorSizeRatio;
+      if (upR > 0.0) {
+        canvas.drawRect(offset + Offset((size.width - resW) / 2, -resH / 2) & Size(resW, resH), resistorPaint);
+      }
+
+      if (downR > 0.0) {
+        canvas.drawRect(offset + Offset((size.width - resW) / 2, size.height - resH / 2) & Size(resW, resH), resistorPaint);
+      }
+    }
+
+    {
+      double resH = min(maxResistorLen, size.height * resistorLengthRelative);
+      double resW = resH / resistorSizeRatio;
+      if (leftR > 0.0) {
+        canvas.drawRect(offset + Offset(-resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
+      }
+      if (rightR > 0.0) {
+        canvas.drawRect(offset + Offset(size.width - resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
       }
     }
   }
 
-  static Block create(BlockOrientation or, Random prng) {
-    var newB = Block(or);
-    newB.populate(startingTemp, prng);
-    // TODO fix kostyl'
-    if (newB.children.isNotEmpty) {
-      newB.children[0].children = [];
+    static Block create(BlockOrientation or, Random prng) {
+      var newB = Block(or);
+      newB.populate(startingTemp, prng);
+      newB.freeUp = true;
+      newB.freeDown = true;
+      newB.freeLeft = true;
+      newB.freeRight = true;
+      newB.placeResistors(startingTemp, prng);
+      return newB;
     }
-    return newB;
   }
-}
 
 class BlockPainter extends CustomPainter {
   Block block;
@@ -139,7 +170,8 @@ class BlockPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    block.draw(canvas, const Offset(10.0, 10.0), const Size(500, 500));
+    print(size);
+    block.draw(canvas, const Offset(20.0, 20.0), Size(min(size.height, size.width) - 40, min(size.height, size.width) - 40));
   }
 
   @override
