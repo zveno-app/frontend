@@ -18,9 +18,9 @@ extension OrientationExt on BlockOrientation {
 
 class Block {
   // TODO better probability distribution
-  static const double nextDivisionP = 0.5; // Exponential probability decrease
+  static const double nextDivisionP = 0.7; // Exponential probability decrease
   static const double maxChildren = 4;
-  static const double tempMultiplier = 0.5;
+  static const double tempMultiplier = 0.6;
   static const double startingTemp = 2.0;
   static const double resistorP = 1.5;
   static const double resistanceMultiplier = 0.5;
@@ -45,12 +45,14 @@ class Block {
   double startV = 0.0;
   double endV = 0.0;
 
-  Block(this.or);
+  double complexity;
+
+  Block(this.or, this.complexity);
 
   void populate(double temp, Random prng) {
-    while (prng.nextDouble() < nextDivisionP * temp / (children.length + 1) && children.length < maxChildren) {
-      var newB = Block(or.other());
-      var newB2 = Block(or.other());
+    while (prng.nextDouble() < complexity * nextDivisionP * temp / (children.length + 1) && children.length < maxChildren) {
+      var newB = Block(or.other(), complexity);
+      var newB2 = Block(or.other(), complexity);
       newB.populate(temp * tempMultiplier, prng);
       newB2.populate(temp * tempMultiplier, prng);
       children.add(newB);
@@ -151,17 +153,32 @@ class Block {
     }
   }
 
-    static Block create(BlockOrientation or, Random prng) {
-      var newB = Block(or);
-      newB.populate(startingTemp, prng);
-      newB.freeUp = true;
-      newB.freeDown = true;
-      newB.freeLeft = true;
-      newB.freeRight = true;
-      newB.placeResistors(startingTemp, prng);
-      return newB;
-    }
+  static Block create(BlockOrientation or, Random prng, double complexity) {
+    var newB = Block(or, complexity);
+    newB.populate(startingTemp, prng);
+    newB.freeUp = true;
+    newB.freeDown = true;
+    newB.freeLeft = true;
+    newB.freeRight = true;
+    newB.placeResistors(startingTemp, prng);
+    return newB;
   }
+
+  factory Block.fromJson(Map<String, dynamic> json) {
+    var or = json['orient'] == 'v' ? BlockOrientation.v : BlockOrientation.h;
+    var it = Block(or, json['complexity'])
+      ..leftR = json['leftR']
+      ..rightR = json['rightR']
+      ..upR = json['upR']
+      ..downR = json['downR']
+      ..startV = json['startV']
+      ..endV = json['endV'];
+    for (var child in json['children']) {
+      it.children.add(Block.fromJson(child));
+    }
+    return it;
+  }
+}
 
 class BlockPainter extends CustomPainter {
   Block block;
@@ -170,7 +187,6 @@ class BlockPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    print(size);
     block.draw(canvas, const Offset(20.0, 20.0), Size(min(size.height, size.width) - 40, min(size.height, size.width) - 40));
   }
 
