@@ -100,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _checkAnswer(String s) {
     print(s);
-    _currentColor = Colors.indigo;
+    setState(() => _currentColor = Colors.indigo);
     Api.checkAnswer(_counter.toString(), s).then((value) {
       print(value);
       setState(() {_currentColor = value ? Colors.green : Colors.red;});
