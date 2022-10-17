@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.deepPurple,
       ),
-      home: const MyHomePage(title: 'POC'),
+      home: const MyHomePage(title: 'zveno'),
     );
   }
 }
@@ -55,8 +55,17 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   double _currentSliderValue = 0.5;
   double _currentComplexity = 0.5;
+  Color _currentColor = Colors.indigo;
+
+  final _answer_controller = TextEditingController();
 
   late Future<Block> futureScheme;
+
+  @override
+  void dispose() {
+    _answer_controller.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -74,7 +83,8 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
       _currentComplexity = _currentSliderValue;
-    futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
+      _currentColor = Colors.indigo;
+      futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
     });
   }
 
@@ -90,6 +100,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _checkAnswer(String s) {
     print(s);
+    _currentColor = Colors.indigo;
+    Api.checkAnswer(_counter.toString(), s).then((value) {
+      print(value);
+      setState(() {_currentColor = value ? Colors.green : Colors.red;});
+      return value;
+    });
+
   }
 
   @override
@@ -102,9 +119,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text('$_counter ${widget.title}'),
+        title: Text('${widget.title}'),
+        backgroundColor: _currentColor,
       ),
       body: Container(
         constraints: const BoxConstraints.expand(),
@@ -124,33 +140,54 @@ class _MyHomePageState extends State<MyHomePage> {
                           painter: BlockPainter(snap.data!),
                           child: Container()));
                 } else if (snap.hasError) {
-                  return Text(snap.error.toString());
+                  return Text('Ошибка получения схемы с $API_ENDPOINT: ${snap.error.toString()}');
                 } else {
                   return const CircularProgressIndicator();
                 }
             })),
-            Slider(
-              value: _currentSliderValue,
-              onChanged: _setSlider,
-              min: 0.0,
-              max: 1.0,
-              label: _currentSliderValue.toStringAsFixed(2),
+            Padding(
+              padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(flex: 10, child: Slider(
+                    value: _currentSliderValue,
+                    onChanged: _setSlider,
+                    min: 0.0,
+                    max: 1.0,
+                    label: _currentSliderValue.toStringAsFixed(2),
+                  )),
+                  Spacer(flex: 1),
+                  OutlinedButton(
+                    onPressed: _incrementCounter,
+                    child: const Text('Сгенерировать ещё')
+                  )
+                ]
+              )
             ),
             Padding(
-                padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
-                child: TextField(
+              padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Flexible(flex: 10, child: TextField(
                   onSubmitted: _checkAnswer,
                   decoration: const InputDecoration(
                       hintText: "Введите ответ", border: OutlineInputBorder()),
-                ))
+                  controller: _answer_controller
+                )),
+                Spacer(flex: 1),
+                OutlinedButton(
+                  onPressed: () {return _checkAnswer(_answer_controller.text);},
+                  child: const Text('Проверить ответ')
+                )
+              ])
+            )
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Rerender',
-        child: const Icon(Icons.refresh),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      // floatingActionButton: FloatingActionButton(
+        // onPressed: _incrementCounter,
+        // tooltip: 'Rerender',
+        // child: const Icon(Icons.refresh),
+      // ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
