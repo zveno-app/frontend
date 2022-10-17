@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     
-    futureScheme = Api.createAndGet('aboba', 0.8);
+    futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
   }
   
   void _incrementCounter() {
@@ -74,6 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
       _currentComplexity = _currentSliderValue;
+    futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
     });
   }
 

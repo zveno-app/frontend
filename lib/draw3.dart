@@ -43,7 +43,6 @@ class Block {
   bool freeDown = false;
 
   double startV = 0.0;
-  double endV = 0.0;
 
   double complexity;
 
@@ -165,14 +164,20 @@ class Block {
   }
 
   factory Block.fromJson(Map<String, dynamic> json) {
-    var or = json['orient'] == 'v' ? BlockOrientation.v : BlockOrientation.h;
+    BlockOrientation or;
+    if (json['orient'] == 'H') {
+      or = BlockOrientation.h;
+    } else if (json['orient'] == 'V') {
+      or = BlockOrientation.v;
+    } else {
+        throw Exception('Wrong block orientation');
+    }
     var it = Block(or, json['complexity'])
       ..leftR = json['leftR']
       ..rightR = json['rightR']
       ..upR = json['upR']
       ..downR = json['downR']
-      ..startV = json['startV']
-      ..endV = json['endV'];
+      ..startV = json['startV'];
     for (var child in json['children']) {
       it.children.add(Block.fromJson(child));
     }

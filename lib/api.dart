@@ -13,7 +13,9 @@ class Api {
 
     static Future<void> createBlock(String id, double complexity) async {
         final resp = await http.post(Uri.parse('http://localhost:8080/block/$id?complexity=${complexity.toStringAsFixed(2)}'));
-        if (resp.statusCode != 200) {
+        if (resp.statusCode == 409) {
+            return;
+        } else if (resp.statusCode != 200) {
             throw Exception("Failed to create block: ${resp.body}");
         }
     }
