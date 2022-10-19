@@ -14,23 +14,28 @@ class Api {
         }
     }
 
-    static Future<void> createBlock(String id, double complexity) async {
-        final resp = await http.post(Uri.parse('$API_ENDPOINT/block/$id?complexity=${complexity.toStringAsFixed(3)}'));
-        if (resp.statusCode == 409) {
-            return;
-        } else if (resp.statusCode != 200) {
+    static Future<String> createBlock(double complexity) async {
+        final int complexityInt = complexity.round();
+        final resp = await http.post(Uri.parse('$API_ENDPOINT/block?complexity=${(complexityInt.toDouble() / 100).toStringAsFixed(2)}'));
+        if (resp.statusCode != 200) {
             throw Exception("Failed to create block: ${resp.body}");
         }
-    }
-
-    static Future<Block> createAndGet(String id, double complexity) async {
-        await createBlock(id, complexity);
-        return await getBlock(id);
+        return jsonDecode(resp.body)['id'];
     }
 
     // TODO: accept only double-like input (e.g. 3.1415 or 100 but not abcdef or 3.1.2.3)
     static Future<bool> checkAnswer(String id, String answer) async {
-        final resp = await http.get(Uri.parse('$API_ENDPOINT/check/$id?answer=$answer'));
-        return resp.statusCode != 400 && (jsonDecode(resp.body) as bool);
+        final resp = await http.get(Uri.parse('$API_ENDPOINT/block/$id/check?answer=$answer'));
+        if (resp.statusCode == 404) {
+            throw Exception("404 not found [${resp.body}]");
+        }
+        if (resp.statusCode == 400) {
+            // bad answer
+            return false;
+        }
+        if (resp.statusCode != 200) {
+            throw Exception("not OK status code: $resp.statusCode [${resp.body}]");
+        }
+        return jsonDecode(resp.body)["result"] as bool;
     }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinbox/material.dart';
 import 'package:zveno_frontend/api.dart';
 import 'package:zveno_frontend/draw.dart';
 import 'package:zveno_frontend/draw3.dart';
@@ -53,17 +54,19 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  double _currentSliderValue = 0.5;
+  double _currentSliderValue = 50;
   double _currentComplexity = 0.5;
   Color _currentColor = Colors.indigo;
 
-  final _answer_controller = TextEditingController();
+  final answerController = TextEditingController();
+  final _blockIDContoller = TextEditingController();
+  String? _currentCircuitId;
 
   late Future<Block> futureScheme;
 
   @override
   void dispose() {
-    _answer_controller.dispose();
+    answerController.dispose();
     super.dispose();
   }
 
@@ -71,20 +74,25 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     
-    futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
+    futureScheme = _createAndGetCircuit(_currentComplexity);
+  }
+
+  Future<Block> _createAndGetCircuit(double complexity) async {
+    _currentCircuitId = await Api.createBlock(complexity);
+    return await Api.getBlock(_currentCircuitId!);
   }
   
-  void _incrementCounter() {
+  void _generateCircuit() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      _counter++;
+      _blockIDContoller.text = _counter.toString();
       _currentComplexity = _currentSliderValue;
       _currentColor = Colors.indigo;
-      futureScheme = Api.createAndGet(_counter.toString(), _currentComplexity);
+      futureScheme = _createAndGetCircuit(_currentComplexity);
     });
   }
 
@@ -101,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _checkAnswer(String s) {
     print(s);
     setState(() => _currentColor = Colors.indigo);
-    Api.checkAnswer(_counter.toString(), s).then((value) {
+    Api.checkAnswer(_currentCircuitId!, s).then((value) {
       print(value);
       setState(() {_currentColor = value ? Colors.green : Colors.red;});
       return value;
@@ -112,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
+    // by the _generateCircuit method above.
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
@@ -146,36 +154,59 @@ class _MyHomePageState extends State<MyHomePage> {
                 }
             })),
             Padding(
-              padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible(flex: 10, child: Slider(
-                    value: _currentSliderValue,
-                    onChanged: _setSlider,
-                    min: 0.0,
-                    max: 1.0,
-                    label: _currentSliderValue.toStringAsFixed(2),
+                  Text("Сложность схемы"),
+                  Spacer(flex: 1),
+                  Flexible(flex: 30, child: SliderTheme(
+                    child: Slider(
+                      value: _currentSliderValue,
+                      onChanged: _setSlider,
+                      min: 1,
+                      max: 100,
+                      label: _currentSliderValue.round().toString(),  
+                    ),
+                    data: SliderThemeData(
+                      showValueIndicator: ShowValueIndicator.always,
+                    )
+                  )),
+//                  Flexible(flex: 3, child: TextField(
+//                    decoration: const InputDecoration(
+//                      hintText: "ID схемы с такой сложностью",
+//                      border: OutlineInputBorder()
+//                    ),
+//                    controller: _blockIDContoller
+//                  )),
+                  Spacer(flex: 2),
+                  Text("ID схемы для сложности"),
+                  Spacer(flex: 1),
+                  Flexible(flex: 20, child: SpinBox(
+                    value: 0,
+                    min: 0,
+                    max: 1048576,
+                    onChanged: (v) => setState(() => {_counter = v.round()})
                   )),
                   Spacer(flex: 1),
                   OutlinedButton(
-                    onPressed: _incrementCounter,
+                    onPressed: _generateCircuit,
                     child: const Text('Сгенерировать ещё')
                   )
                 ]
               )
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
+              padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Flexible(flex: 10, child: TextField(
                   onSubmitted: _checkAnswer,
                   decoration: const InputDecoration(
                       hintText: "Введите ответ", border: OutlineInputBorder()),
-                  controller: _answer_controller
+                  controller: answerController
                 )),
                 Spacer(flex: 1),
                 OutlinedButton(
-                  onPressed: () {return _checkAnswer(_answer_controller.text);},
+                  onPressed: () {return _checkAnswer(answerController.text);},
                   child: const Text('Проверить ответ')
                 )
               ])
@@ -184,7 +215,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       // floatingActionButton: FloatingActionButton(
-        // onPressed: _incrementCounter,
+        // onPressed: _generateCircuit,
         // tooltip: 'Rerender',
         // child: const Icon(Icons.refresh),
       // ), // This trailing comma makes auto-formatting nicer for build methods.
