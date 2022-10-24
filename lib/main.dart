@@ -78,22 +78,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<Block> _createAndGetCircuit(double complexity) async {
-    _currentCircuitId = await Api.createBlock(complexity);
+    String circuitID = await Api.createBlock(complexity);
+    setState(() {_currentCircuitId = circuitID;});
+    _blockIDContoller.text = _currentCircuitId!;
     return await Api.getBlock(_currentCircuitId!);
   }
   
-  void _generateCircuit() {
+  void _generateCircuit(bool fromId) {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
       // so that the display can reflect the updated values. If we changed
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
-      _blockIDContoller.text = _counter.toString();
       _currentComplexity = _currentSliderValue;
       _currentColor = Colors.indigo;
-      futureScheme = _createAndGetCircuit(_currentComplexity);
+      futureScheme = fromId ? _getCircuitByID() : _createAndGetCircuit(_currentComplexity);
     });
+  }
+
+  Future<Block> _getCircuitByID() async {
+    setState(() {_currentCircuitId = _blockIDContoller.text;});
+    return await Api.getBlock(_currentCircuitId!);
   }
 
   void _setSlider(double newV) {
@@ -107,10 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _checkAnswer(String s) {
-    print(s);
     setState(() => _currentColor = Colors.indigo);
     Api.checkAnswer(_currentCircuitId!, s).then((value) {
-      print(value);
       setState(() {_currentColor = value ? Colors.green : Colors.red;});
       return value;
     });
@@ -127,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.title}'),
+        title: Text('${widget.title} #$_currentCircuitId'),
         backgroundColor: _currentColor,
       ),
       body: Container(
@@ -178,22 +182,30 @@ class _MyHomePageState extends State<MyHomePage> {
 //                    ),
 //                    controller: _blockIDContoller
 //                  )),
-                  Spacer(flex: 2),
-                  Text("ID схемы для сложности"),
-                  Spacer(flex: 1),
-                  Flexible(flex: 20, child: SpinBox(
-                    value: 0,
-                    min: 0,
-                    max: 1048576,
-                    onChanged: (v) => setState(() => {_counter = v.round()})
-                  )),
                   Spacer(flex: 1),
                   OutlinedButton(
-                    onPressed: _generateCircuit,
+                    onPressed: () => _generateCircuit(false),
                     child: const Text('Сгенерировать ещё')
                   )
                 ]
               )
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Flexible(flex: 10, child: TextField(
+                  onSubmitted: (s) => _generateCircuit(true),
+                  decoration: const InputDecoration(
+                    hintText: "#ID схемы", border: OutlineInputBorder()
+                  ),
+                  controller: _blockIDContoller
+                )),
+                Spacer(flex: 1),
+                OutlinedButton(
+                  onPressed: () => _generateCircuit(true),
+                  child: const Text('Загрузить схему с данным ID')
+                )
+              ])
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),

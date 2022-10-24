@@ -16,6 +16,10 @@ extension OrientationExt on BlockOrientation {
   }
 }
 
+const Offset INITIAL_OFFSET = const Offset(20.0, 20.0);
+const double SQRT_2_HALF = 1.4142135623730951 / 2;
+const double TERMINAL_RADIUS = 10, DEFAULT_RADIUS = 5;
+
 class Block {
   // TODO better probability distribution
   static const double nextDivisionP = 0.7; // Exponential probability decrease
@@ -104,16 +108,25 @@ class Block {
     }
   }
 
-  void draw(Canvas canvas, Offset offset, Size size) {
-    var paint = Paint()
+  void drawLeaf(Canvas canvas, Offset offset, Size size) {
+    var strokePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
+    var fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 3;
+    Rect rectangle = offset & size;
+    canvas.drawRect(rectangle, strokePaint);
+    for (double x in [rectangle.left, rectangle.right]) {
+      for (double y in [rectangle.top, rectangle.bottom]) {
+        canvas.drawCircle(Offset(x, y), DEFAULT_RADIUS, fillPaint);
+      }
+    }
+  }
 
-    var resistorPaint = Paint()
-      ..style = PaintingStyle.fill;
-
+  void drawGrid(Canvas canvas, Offset offset, Size size) {
     if (children.isEmpty) {
-      canvas.drawRect(offset & size, paint);
+      drawLeaf(canvas, offset, size);
     }
 
     double childWidth = size.width / children.length;
@@ -121,34 +134,59 @@ class Block {
     for (int i = 0; i < children.length; i++) {
       if (or == BlockOrientation.h) {
         var childStartOffset = offset + Offset(0.0, childHeight * i);
-        children[i].draw(canvas, childStartOffset, Size(size.width, childHeight));
+        children[i].drawGrid(canvas, childStartOffset, Size(size.width, childHeight));
       } else {
         var childStartOffset = offset + Offset(childWidth * i, 0.0);
-        children[i].draw(canvas, childStartOffset, Size(childWidth, size.height));
+        children[i].drawGrid(canvas, childStartOffset, Size(childWidth, size.height));
       }
     }
+  }
 
-    {
-      double resW = min(maxResistorLen, size.width * resistorLengthRelative);
-      double resH = resW / resistorSizeRatio;
-      if (upR > 0.0) {
-        canvas.drawRect(offset + Offset((size.width - resW) / 2, -resH / 2) & Size(resW, resH), resistorPaint);
-      }
+  void drawResistors(Canvas canvas, Offset offset, Size size) {
+    var resistorPaintBlack = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    var resistorPaintWhite = Paint()
+      ..style = PaintingStyle.fill
+      ..color = Color(0xFFFFFFFF);
 
-      if (downR > 0.0) {
-        canvas.drawRect(offset + Offset((size.width - resW) / 2, size.height - resH / 2) & Size(resW, resH), resistorPaint);
+    double childWidth = size.width / children.length;
+    double childHeight = size.height / children.length;
+    for (int i = 0; i < children.length; i++) {
+      if (or == BlockOrientation.h) {
+        var childStartOffset = offset + Offset(0.0, childHeight * i);
+        children[i].drawResistors(canvas, childStartOffset, Size(size.width, childHeight));
+      } else {
+        var childStartOffset = offset + Offset(childWidth * i, 0.0);
+        children[i].drawResistors(canvas, childStartOffset, Size(childWidth, size.height));
       }
+    } 
+
+    double resW = min(maxResistorLen, size.width * resistorLengthRelative);
+    double resH = resW / resistorSizeRatio;
+    if (upR > 0.0) {
+      Rect rect = offset + Offset((size.width - resW) / 2, -resH / 2) & Size(resW, resH);
+      canvas.drawRect(rect, resistorPaintWhite);
+      canvas.drawRect(rect, resistorPaintBlack);
     }
 
-    {
-      double resH = min(maxResistorLen, size.height * resistorLengthRelative);
-      double resW = resH / resistorSizeRatio;
-      if (leftR > 0.0) {
-        canvas.drawRect(offset + Offset(-resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
-      }
-      if (rightR > 0.0) {
-        canvas.drawRect(offset + Offset(size.width - resW / 2, (size.height - resH) / 2) & Size(resW, resH), resistorPaint);
-      }
+    if (downR > 0.0) {
+      Rect rect = offset + Offset((size.width - resW) / 2, size.height - resH / 2) & Size(resW, resH);
+      canvas.drawRect(rect, resistorPaintWhite);
+      canvas.drawRect(rect, resistorPaintBlack);
+    }
+
+    resH = min(maxResistorLen, size.height * resistorLengthRelative);
+    resW = resH / resistorSizeRatio;
+    if (leftR > 0.0) {
+      Rect rect = offset + Offset(-resW / 2, (size.height - resH) / 2) & Size(resW, resH);
+      canvas.drawRect(rect, resistorPaintWhite);
+      canvas.drawRect(rect, resistorPaintBlack);
+    }
+    if (rightR > 0.0) {
+      Rect rect = offset + Offset(size.width - resW / 2, (size.height - resH) / 2) & Size(resW, resH);
+      canvas.drawRect(rect, resistorPaintWhite);
+      canvas.drawRect(rect, resistorPaintBlack);
     }
   }
 
@@ -185,6 +223,20 @@ class Block {
   }
 }
 
+void drawTerminalVertex(Canvas canvas, Offset offset) {
+  var paintBlack = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
+  var paintWhite = Paint()
+        ..style = PaintingStyle.fill
+        ..color = const Color(0xFFFFFFFF);
+
+  canvas.drawCircle(offset, TERMINAL_RADIUS, paintWhite);
+  canvas.drawCircle(offset, TERMINAL_RADIUS, paintBlack);
+  canvas.drawLine(offset + Offset(TERMINAL_RADIUS * -SQRT_2_HALF, TERMINAL_RADIUS * SQRT_2_HALF), offset + Offset(TERMINAL_RADIUS * SQRT_2_HALF, TERMINAL_RADIUS * -SQRT_2_HALF), paintBlack);
+  canvas.drawLine(offset + Offset(TERMINAL_RADIUS * SQRT_2_HALF, TERMINAL_RADIUS * SQRT_2_HALF), offset + Offset(TERMINAL_RADIUS * -SQRT_2_HALF, TERMINAL_RADIUS * -SQRT_2_HALF), paintBlack);
+}
+
 class BlockPainter extends CustomPainter {
   Block block;
 
@@ -192,8 +244,13 @@ class BlockPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    block.draw(canvas, const Offset(20.0, 20.0), Size(min(size.height, size.width) - 40, min(size.height, size.width) - 40));
-  }
+    Size finalSize = Size(min(size.height, size.width) - 40, min(size.height, size.width) - 40);
+
+    block.drawGrid(canvas, INITIAL_OFFSET, finalSize);
+    block.drawResistors(canvas, INITIAL_OFFSET, finalSize);
+    drawTerminalVertex(canvas, INITIAL_OFFSET + Offset(0, finalSize.height));
+    drawTerminalVertex(canvas, INITIAL_OFFSET + Offset(finalSize.width, 0));
+}
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;

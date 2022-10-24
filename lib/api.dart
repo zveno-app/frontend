@@ -2,13 +2,17 @@ import 'draw3.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String API_ENDPOINT = 'http://localhost:8080/'; 
+const String API_ENDPOINT = const String.fromEnvironment("ZVENO_API_ENDPOINT", defaultValue: "http://localhost:8080/"); 
+const String NOT_FOUND_ERROR = 'Not found';
 
 class Api {
     static Future<Block> getBlock(String id) async {
         final resp = await http.get(Uri.parse('$API_ENDPOINT/block/$id'));
+        dynamic bodyDecoded = jsonDecode(resp.body);
         if (resp.statusCode == 200) {
-            return Block.fromJson(jsonDecode(resp.body));
+            return Block.fromJson(bodyDecoded);
+        } else if (bodyDecoded['error'] == NOT_FOUND_ERROR) {
+            throw Exception("\nВведённый ID схемы некорректен. Попробуйте ввести другой или сгенерировать случайную схему.");
         } else {
             throw Exception("Failed to load block: ${resp.body}");
         }
