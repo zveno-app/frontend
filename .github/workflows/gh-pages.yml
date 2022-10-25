@@ -1,0 +1,57 @@
+name: Build for web and deploy to GitHub Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["master"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2  
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Fetch dependencies
+        run: flutter pub get
+      - name: Build web
+        run: flutter build web
+      - name: Copy artifact
+        run: cp -r build/web _site
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+      - name: Configure ssh
+        uses: webfactory/ssh-agent@v0.4.1
+        with:
+          ssh-private-key: ${{ secrets.PAGES_SSH_KEY }}
+      - name: Add Github host keys
+        run: ssh-keyscan github.com >> ~/.ssh/known-hosts
+      - name: Deploy to GitHub Pages 
+        run: |
+          cd _site
+          git init
+          git config user.email github-actions@github.com
+          git config user.name  github-actions
+          git switch -c zveno-frontend-latest
+          git add -A
+          git commit -m "Deployment [commit: ${{ github.sha }}]"
+          git remote add origin git@github.com:zveno-app/zveno-app.github.io.git
+          git push origin zveno-frontend-latest --force
