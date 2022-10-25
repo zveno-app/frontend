@@ -2,7 +2,7 @@ import 'draw3.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String API_ENDPOINT = const String.fromEnvironment("ZVENO_API_ENDPOINT", defaultValue: "http://localhost:8080/"); 
+const String API_ENDPOINT = String.fromEnvironment("ZVENO_API_ENDPOINT", defaultValue: "https://zveno.ntonee.one/"); 
 const String NOT_FOUND_ERROR = 'Not found';
 
 class Api {

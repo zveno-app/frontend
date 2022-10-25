@@ -154,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 } else if (snap.hasError) {
                   return Text('Ошибка получения схемы с $API_ENDPOINT: ${snap.error.toString()}');
                 } else {
-                  return const CircularProgressIndicator();
+                  return const Center(child: SizedBox(width: 30, height: 30, child: CircularProgressIndicator()));
                 }
             })),
             Padding(
