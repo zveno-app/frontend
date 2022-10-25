@@ -1,0 +1,32 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Dart
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build web
+      - uses: actions-x/commit@v6
+        with:
+          branch: 'master'
+          files: './build/web/'
+          repository: 'https://github.com/zveno-app/zveno-app.github.io'
+          # The token used to push the code, not needed if you push to the same repository
+          token: ${{ secrets.NIKITA_GH_TOKEN }}
+      
+      
+          
