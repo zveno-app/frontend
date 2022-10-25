@@ -24,7 +24,7 @@ jobs:
         with:
           branch: 'master'
           files: './build/web/'
-          repository: 'git@github.com/zveno-app/zveno-app.github.io'
+          repository: 'https://github.com/zveno-app/zveno-app.github.io'
           # The token used to push the code, not needed if you push to the same repository
           token: ${{ secrets.NIKITA_GH_TOKEN }}
       
