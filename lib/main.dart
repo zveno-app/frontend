@@ -99,7 +99,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<Block> _getCircuitByID() async {
     setState(() {_currentCircuitId = _blockIDContoller.text;});
-    return await Api.getBlock(_currentCircuitId!);
+    var res = await Api.getBlock(_currentCircuitId!);
+    setState(() {});
+    return res;
   }
 
   void _setSlider(double newV) {
@@ -161,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Сложность схемы"),
+                  Text("Сложность"),
                   Spacer(flex: 1),
                   Flexible(flex: 30, child: SliderTheme(
                     child: Slider(
