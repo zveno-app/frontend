@@ -48,6 +48,8 @@ jobs:
         run: |
           cd _site
           git init
+          git config user.email github-actions@github.com
+          git config user.name  github-actions
           git switch -c zveno-frontend-latest
           git add -A
           git commit -m "Deployment [commit: ${{ github.sha }}]"
