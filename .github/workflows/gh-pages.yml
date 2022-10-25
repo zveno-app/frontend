@@ -31,8 +31,12 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter pub get
-      - run: flutter build web
+      - name: Fetch dependencies
+        run: flutter pub get
+      - name: Build web
+        run: flutter build web
+      - name: Copy artifact
+        run: cp -r build/web _site
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
 
