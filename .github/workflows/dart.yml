@@ -23,11 +23,10 @@ jobs:
       - uses: actions-x/commit@v6
         with:
           branch: 'master'
-          files: '.'
-          repository: 'https://github.com/zveno-app/zveno-app.github.io'
+          files: './build/web/'
+          repository: 'git@github.com/zveno-app/zveno-app.github.io'
           # The token used to push the code, not needed if you push to the same repository
-          token: ${{ github.token }}
-          # Whether to perform force push
+          token: ${{ secrets.NIKITA_GH_TOKEN }}
       
       
           
