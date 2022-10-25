@@ -205,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Spacer(flex: 1),
                 OutlinedButton(
                   onPressed: () => _generateCircuit(true),
-                  child: const Text('Загрузить схему с данным ID')
+                  child: const Text('Загрузить схему')
                 )
               ])
             ),
