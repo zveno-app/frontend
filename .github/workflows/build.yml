@@ -37,7 +37,7 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter build linux
-          zip -r _artifact_linux.zip /home/ntonee/projects/zveno_frontend_all/build/linux/x64/release/bundle
+          zip -r _artifact_linux.zip ./build/linux/x64/release/bundle
       - uses: actions/upload-artifact@v3
         with:
           name: linux-bundle.zip
