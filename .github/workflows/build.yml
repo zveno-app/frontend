@@ -28,7 +28,6 @@ jobs:
         run: flutter pub get
       - run: |
           flutter build apk
-          cp build/app/outputs/flutter-apk/app-release.apk ./_artifact_android.apk
       - name: Prepare for building for Linux Desktop
         run: |
           sudo apt-get update -y
@@ -37,13 +36,12 @@ jobs:
         run: |
           flutter config --enable-linux-desktop
           flutter build linux
-          zip -r _artifact_linux.zip ./build/linux/x64/release/bundle
       - uses: actions/upload-artifact@v3
         with:
-          name: linux-bundle.zip
-          path: _artifact_linux.zip
+          name: Linux bundle
+          path: ./build/linux/x64/release/bundle
       - uses: actions/upload-artifact@v3
         with:
-          name: android.apk
-          path: _artifact_android.apk
+          name: Android APK
+          path: ./build/app/outputs/flutter-apk/app-release.apk
       
